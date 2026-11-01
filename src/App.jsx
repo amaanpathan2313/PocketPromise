@@ -1,23 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, SignIn, SignUp } from '@clerk/clerk-react';
+import { SignIn, SignUp } from '@clerk/clerk-react';
 import { Toaster } from 'react-hot-toast';
 import AppShell from './components/layout/AppShell';
-import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
-import AddLoanPage from './pages/AddLoanPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
-
-function ProtectedRoute({ children }) {
-  return (
-    <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut>
-        <Navigate to="/" replace />
-      </SignedOut>
-    </>
-  );
-}
 
 export default function App() {
   return (
@@ -25,20 +12,26 @@ export default function App() {
       <Toaster
         position="top-center"
         toastOptions={{
-          duration: 3000,
+          duration: 3500,
           style: {
-            background: '#1a1a3e',
+            background: '#0c101d',
             color: '#f1f5f9',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid rgba(0, 210, 255, 0.25)',
             borderRadius: '12px',
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
           },
         }}
       />
 
       <Routes>
-        {/* Public */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Main Dashboard Layout (AppShell) */}
+        <Route element={<AppShell />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
 
         {/* Clerk Auth Pages */}
         <Route
@@ -50,7 +43,7 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--gradient-hero)',
+                background: '#080c16',
               }}
             >
               <SignIn routing="path" path="/sign-in" />
@@ -66,7 +59,7 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--gradient-hero)',
+                background: '#080c16',
               }}
             >
               <SignUp routing="path" path="/sign-up" />
@@ -74,22 +67,8 @@ export default function App() {
           }
         />
 
-        {/* Protected Routes - inside AppShell layout */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppShell />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/add" element={<AddLoanPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Route>
-
         {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </>
   );

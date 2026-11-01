@@ -1,133 +1,160 @@
-import { useState, Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from '@clerk/clerk-react';
-import toast from 'react-hot-toast';
-import { useLoans } from '../hooks/useLoans';
-import { useStats } from '../hooks/useStats';
-import StatsCards from '../components/dashboard/StatsCards';
-import LoanList from '../components/dashboard/LoanList';
-import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { sendReminderEmail } from '../lib/reminderEngine';
-import { FiLoader } from 'react-icons/fi';
-
-const Scene3D = lazy(() => import('../components/dashboard/Scene3D'));
+import MetricCards from '../components/dashboard/MetricCards';
+import CashFlowChart from '../components/dashboard/CashFlowChart';
+import RepaymentStatusChart from '../components/dashboard/RepaymentStatusChart';
+import ReliabilityBarChart from '../components/dashboard/ReliabilityBarChart';
+import DebtsTable from '../components/dashboard/DebtsTable';
+import AddLoanModal from '../components/modals/AddLoanModal';
+import AICallSimulatorModal from '../components/modals/AICallSimulatorModal';
+import { usePocketPromise } from '../context/PocketPromiseContext';
 
 export default function DashboardPage() {
-  const { user } = useUser();
-  const { activeLoans, paidLoans, loading, markAsPaid } = useLoans();
-  const stats = useStats(activeLoans, paidLoans);
-
-  const [confirmLoanId, setConfirmLoanId] = useState(null);
-
-  const handleMarkPaid = async () => {
-    if (!confirmLoanId) return;
-    try {
-      await markAsPaid(confirmLoanId);
-      toast.success('Marked as paid! Reminders stopped.', {
-        icon: '✅',
-        style: {
-          background: '#1a1a3e',
-          color: '#f1f5f9',
-          border: '1px solid rgba(16,185,129,0.3)',
-        },
-      });
-    } catch (err) {
-      toast.error('Failed to update. Try again.');
-      console.error(err);
-    }
-    setConfirmLoanId(null);
-  };
-
-  const handleSendReminder = async (loan) => {
-    const t = toast.loading('Sending reminder...', {
-      style: {
-        background: '#1a1a3e',
-        color: '#f1f5f9',
-        border: '1px solid rgba(99,102,241,0.3)',
-      },
-    });
-    try {
-      const result = await sendReminderEmail(loan, user?.fullName || user?.firstName || 'Lender');
-      if (result.success) {
-        toast.success(`Reminder sent in ${result.lang}!`, { id: t, icon: '📩' });
-      } else {
-        toast.error('Failed to send. Check your EmailJS config.', { id: t });
-      }
-    } catch (err) {
-      toast.error('Failed to send reminder.', { id: t });
-      console.error(err);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-        >
-          <FiLoader size={32} color="var(--color-primary-400)" />
-        </motion.div>
-      </div>
-    );
-  }
+  const { activeTab, setActiveTab } = usePocketPromise();
 
   return (
-    <div className="page-container">
-      {/* Welcome */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{ marginBottom: '20px' }}
-      >
-        <h1
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        paddingBottom: '30px',
+      }}
+    >
+      {/* Tab Filter Banner if user navigated away from full Dashboard */}
+      {activeTab !== 'dashboard' && (
+        <div
           style={{
-            fontSize: '1.5rem',
-            fontWeight: 800,
-            fontFamily: 'var(--font-display)',
-            marginBottom: '4px',
+            backgroundColor: 'rgba(0, 210, 255, 0.08)',
+            border: '1px solid rgba(0, 210, 255, 0.25)',
+            borderRadius: '12px',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.85rem',
           }}
         >
-          Welcome, <span className="gradient-text">{user?.firstName || 'User'}</span> 👋
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-          {stats.overdueCount > 0
-            ? `${stats.overdueCount} overdue loan${stats.overdueCount > 1 ? 's' : ''} need attention`
-            : 'All loans are on track!'}
-        </p>
-      </motion.div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#00D2FF', fontWeight: 600 }}>Viewing:</span>
+            <span style={{ color: '#ffffff', textTransform: 'capitalize' }}>
+              {activeTab.replace('-', ' ')}
+            </span>
+          </div>
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#00D2FF',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '0.82rem',
+              textDecoration: 'underline',
+            }}
+          >
+            ← Back to Full Dashboard
+          </button>
+        </div>
+      )}
 
-      {/* Stats */}
-      <StatsCards stats={stats} />
+      {/* 1. Top 4 Metric Cards */}
+      <MetricCards />
 
-      {/* 3D Widget */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        style={{ margin: '8px 0' }}
-      >
-        <Suspense fallback={<div style={{ height: '180px' }} />}>
-          <Scene3D height="180px" coinScale={0.9} />
-        </Suspense>
-      </motion.div>
+      {/* 2. Middle Row: Cash Flow Chart + Right Stack (Repayment Status & Debtor Reliability) */}
+      {(activeTab === 'dashboard' || activeTab === 'analytics') && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)',
+            gap: '20px',
+          }}
+          className="grid-cols-1 lg:grid-cols-[1.6fr_1fr]"
+        >
+          {/* Left: Cash Flow (Money Lent vs. Recovered) */}
+          <div style={{ minHeight: '340px' }}>
+            <CashFlowChart />
+          </div>
 
-      {/* Active Loans */}
-      <LoanList
-        loans={activeLoans}
-        onMarkPaid={(id) => setConfirmLoanId(id)}
-        onSendReminder={handleSendReminder}
-        title="Active Loans"
-      />
+          {/* Right: Stack of 2 analytics cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <RepaymentStatusChart />
+            <ReliabilityBarChart />
+          </div>
+        </div>
+      )}
 
-      {/* Confirm Dialog */}
-      <ConfirmDialog
-        isOpen={!!confirmLoanId}
-        onConfirm={handleMarkPaid}
-        onCancel={() => setConfirmLoanId(null)}
-        title="Confirm Payment Received"
-        message="Are you sure the borrower has returned the money? This will permanently stop all reminders for this loan."
-      />
-    </div>
+      {/* 3. Settings View (if settings tab clicked) */}
+      {activeTab === 'settings' && (
+        <div
+          style={{
+            backgroundColor: '#0e1424',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+          }}
+        >
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '16px' }}>
+            AI Reminder & Gateway Preferences
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <div style={{ backgroundColor: '#131929', padding: '16px', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>AI Voice Synthesis</div>
+              <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '10px' }}>
+                Select the voice dialect for automated debtor telephone calls.
+              </p>
+              <select
+                style={{
+                  width: '100%',
+                  backgroundColor: '#0c101d',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '8px',
+                  color: '#ffffff',
+                  padding: '8px 12px',
+                  outline: 'none',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <option>English (Indian Accent - Polite & Professional)</option>
+                <option>Hindi (Formal Courtesy Call)</option>
+                <option>English (Neutral International)</option>
+              </select>
+            </div>
+
+            <div style={{ backgroundColor: '#131929', padding: '16px', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>Call Schedule Frequency</div>
+              <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '10px' }}>
+                Automated cadence when promise payback date passes.
+              </p>
+              <select
+                style={{
+                  width: '100%',
+                  backgroundColor: '#0c101d',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '8px',
+                  color: '#ffffff',
+                  padding: '8px 12px',
+                  outline: 'none',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <option>Every 24 Hours after Due Date</option>
+                <option>Every 3 Hours on Due Date</option>
+                <option>Gentle 3-Day Interval</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Bottom Table: AI Reminders Status & Recent Debts */}
+      {activeTab !== 'settings' && <DebtsTable />}
+
+      {/* Modals */}
+      <AddLoanModal />
+      <AICallSimulatorModal />
+    </motion.div>
   );
 }

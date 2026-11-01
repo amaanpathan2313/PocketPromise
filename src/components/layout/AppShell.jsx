@@ -1,87 +1,52 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
-import BottomNav from './BottomNav';
+import PocketPromiseSidebar from './PocketPromiseSidebar';
+import HeaderBar from '../dashboard/HeaderBar';
+import { PocketPromiseProvider } from '../../context/PocketPromiseContext';
 
 export default function AppShell() {
-  const { user } = useUser();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Header */}
-      <header
+    <PocketPromiseProvider>
+      <div
         style={{
-          padding: '16px 20px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid var(--surface-glass-border)',
-          background: 'rgba(10, 10, 26, 0.8)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
+          minHeight: '100vh',
+          backgroundColor: '#080c16',
+          color: '#f8fafc',
+          overflowX: 'hidden',
+          fontFamily: 'var(--font-primary)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--gradient-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.9rem',
-              fontWeight: 800,
-            }}
-          >
-            ₹
-          </div>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: '1.1rem',
-            }}
-          >
-            Lend<span className="gradient-text">Reminder</span>
-          </span>
+        {/* Left Sidebar Navigation */}
+        <PocketPromiseSidebar
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+        />
+
+        {/* Right Main Content Panel */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 0,
+            padding: '0 28px',
+            maxWidth: '1600px',
+            margin: '0 auto',
+            width: '100%',
+          }}
+        >
+          {/* Top Header */}
+          <HeaderBar onOpenMobile={() => setMobileSidebarOpen(true)} />
+
+          {/* Page View */}
+          <main style={{ flex: 1 }}>
+            <Outlet />
+          </main>
         </div>
-
-        {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              style={{
-                fontSize: '0.8rem',
-                color: 'var(--text-secondary)',
-                fontWeight: 500,
-              }}
-            >
-              {user.firstName || 'User'}
-            </span>
-            <img
-              src={user.imageUrl}
-              alt={user.fullName || 'User'}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                border: '2px solid var(--color-primary-500)',
-              }}
-            />
-          </div>
-        )}
-      </header>
-
-      {/* Page Content */}
-      <main style={{ flex: 1 }}>
-        <Outlet />
-      </main>
-
-      {/* Bottom Navigation */}
-      <BottomNav />
-    </div>
+      </div>
+    </PocketPromiseProvider>
   );
 }

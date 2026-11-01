@@ -38,11 +38,11 @@
   --color-warning-500: #f59e0b;
 
   /* Surfaces */
-  --surface-bg: #0a0a1a;
-  --surface-card: rgba(15, 15, 35, 0.7);
-  --surface-card-hover: rgba(25, 25, 55, 0.8);
-  --surface-glass: rgba(255, 255, 255, 0.05);
-  --surface-glass-border: rgba(255, 255, 255, 0.1);
+  --surface-bg: #080c16;
+  --surface-card: rgba(14, 20, 36, 0.7);
+  --surface-card-hover: rgba(20, 28, 48, 0.8);
+  --surface-glass: rgba(255, 255, 255, 0.04);
+  --surface-glass-border: rgba(255, 255, 255, 0.08);
 
   /* Text */
   --text-primary: #f1f5f9;
