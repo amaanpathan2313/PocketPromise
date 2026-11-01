@@ -4,13 +4,15 @@ import {
   FiPhoneCall, 
   FiMail, 
   FiCheckCircle, 
-  FiTrash2 
+  FiTrash2,
+  FiUsers,
+  FiImage 
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { usePocketPromise } from '../../context/PocketPromiseContext';
 
 export default function DebtsTable() {
-  const { loans, startAICall, markAsRepaid, deleteLoan } = usePocketPromise();
+  const { loans, startAICall, markAsRepaid, deleteLoan, setIsAddModalOpen, openLightbox } = usePocketPromise();
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const formatINR = (val) => {
@@ -173,8 +175,48 @@ export default function DebtsTable() {
           <tbody>
             {loans.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
-                  No debts found. Click "+ Add New Loan" above to record one.
+                <td colSpan={5} style={{ padding: '44px 20px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(0, 210, 255, 0.08)',
+                        color: '#00D2FF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <FiUsers size={20} />
+                    </div>
+                    <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#f1f5f9', marginBottom: '4px' }}>
+                      No active or past loans found
+                    </span>
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '340px', marginBottom: '14px', lineHeight: 1.5 }}>
+                      Record a borrower promise to activate automated voice calls, SMS, and email follow-ups.
+                    </p>
+                    <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      style={{
+                        backgroundColor: 'rgba(0, 210, 255, 0.12)',
+                        border: '1px solid rgba(0, 210, 255, 0.3)',
+                        color: '#00D2FF',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.84rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      + Add Your First Loan
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -204,11 +246,37 @@ export default function DebtsTable() {
                           borderRadius: '50%',
                           objectFit: 'cover',
                           backgroundColor: '#1e293b',
+                          flexShrink: 0,
                         }}
                       />
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f1f5f9' }}>
-                        {loan.debtor}
-                      </span>
+                      <div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f1f5f9' }}>
+                          {loan.debtor}
+                        </div>
+                        {loan.imageUrls && loan.imageUrls.length > 0 && (
+                          <button
+                            onClick={() => openLightbox(loan.imageUrls, `${loan.debtor}'s Proof Documents`)}
+                            style={{
+                              background: 'rgba(0, 210, 255, 0.1)',
+                              border: '1px solid rgba(0, 210, 255, 0.25)',
+                              color: '#00D2FF',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              marginTop: '3px',
+                            }}
+                            title="Click to view full receipts & proof"
+                          >
+                            <FiImage size={11} />
+                            {loan.imageUrls.length} {loan.imageUrls.length === 1 ? 'receipt' : 'receipts'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </td>
 
@@ -266,6 +334,33 @@ export default function DebtsTable() {
                           gap: '2px',
                         }}
                       >
+                        {loan.imageUrls && loan.imageUrls.length > 0 && (
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              openLightbox(loan.imageUrls, `${loan.debtor}'s Proof Documents`);
+                            }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#38bdf8',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '0.8rem',
+                              fontWeight: 500,
+                              width: '100%',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.1)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <FiImage size={14} /> View Receipts ({loan.imageUrls.length})
+                          </button>
+                        )}
+
                         <button
                           onClick={() => handleActionClick(loan, 'call')}
                           style={{

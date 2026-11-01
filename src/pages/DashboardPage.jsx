@@ -6,10 +6,11 @@ import ReliabilityBarChart from '../components/dashboard/ReliabilityBarChart';
 import DebtsTable from '../components/dashboard/DebtsTable';
 import AddLoanModal from '../components/modals/AddLoanModal';
 import AICallSimulatorModal from '../components/modals/AICallSimulatorModal';
+import ImageLightboxModal from '../components/modals/ImageLightboxModal';
 import { usePocketPromise } from '../context/PocketPromiseContext';
 
 export default function DashboardPage() {
-  const { activeTab, setActiveTab } = usePocketPromise();
+  const { activeTab, setActiveTab, lightboxData, closeLightbox } = usePocketPromise();
 
   return (
     <motion.div
@@ -155,6 +156,12 @@ export default function DashboardPage() {
       {/* Modals */}
       <AddLoanModal />
       <AICallSimulatorModal />
+      <ImageLightboxModal
+        isOpen={lightboxData.isOpen}
+        images={lightboxData.images}
+        title={lightboxData.title}
+        onClose={closeLightbox}
+      />
     </motion.div>
   );
 }

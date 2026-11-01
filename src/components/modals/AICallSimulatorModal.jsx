@@ -133,7 +133,7 @@ export default function AICallSimulatorModal() {
           {callingLoan.debtor}
         </h3>
         <p style={{ color: '#64748b', fontSize: '0.84rem', margin: '0 0 12px 0' }}>
-          {callingLoan.phone || '+91 98765 43210'}
+          {callingLoan.phone || 'No phone number provided'}
         </p>
 
         {/* Status & Timer */}

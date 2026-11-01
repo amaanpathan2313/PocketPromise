@@ -2,7 +2,7 @@ import { FiFolder, FiShield, FiAlertCircle, FiBell, FiMoreVertical } from 'react
 import { usePocketPromise } from '../../context/PocketPromiseContext';
 
 export default function MetricCards() {
-  const { totalLent, totalRecovered, outstandingDebt, activeRemindersCount } = usePocketPromise();
+  const { totalLent, totalRecovered, outstandingDebt, activeRemindersCount, allLoans } = usePocketPromise();
 
   const formatINR = (val) => {
     return `₹${Number(val).toLocaleString('en-IN', {
@@ -11,13 +11,16 @@ export default function MetricCards() {
     })}`;
   };
 
+  const recoveryRate = totalLent > 0 ? Math.round((totalRecovered / totalLent) * 100) : 0;
+  const pendingCount = allLoans.filter((l) => l.status !== 'Repaid' && l.statusType !== 'repaid').length;
+
   const CARDS = [
     {
       id: 'total-lent',
       title: 'Total Lent',
       value: formatINR(totalLent),
-      trend: '▲ 5% this month',
-      trendColor: '#10b981',
+      trend: allLoans.length > 0 ? `▲ ${allLoans.length} total loan${allLoans.length > 1 ? 's' : ''}` : 'No loans recorded',
+      trendColor: allLoans.length > 0 ? '#10b981' : '#64748b',
       icon: FiFolder,
       iconBg: 'rgba(0, 210, 255, 0.15)',
       iconColor: '#00D2FF',
@@ -28,8 +31,8 @@ export default function MetricCards() {
       id: 'total-recovered',
       title: 'Total Recovered',
       value: formatINR(totalRecovered),
-      trend: '▲ 12% this month',
-      trendColor: '#10b981',
+      trend: totalRecovered > 0 ? `▲ ${recoveryRate}% recovery rate` : '₹0.00 recovered',
+      trendColor: totalRecovered > 0 ? '#10b981' : '#64748b',
       icon: FiShield,
       iconBg: 'rgba(16, 185, 129, 0.15)',
       iconColor: '#10b981',
@@ -40,8 +43,8 @@ export default function MetricCards() {
       id: 'outstanding-debt',
       title: 'Outstanding Debt',
       value: formatINR(outstandingDebt),
-      trend: '▼ 8%',
-      trendColor: '#f97316',
+      trend: outstandingDebt > 0 ? `▼ ${pendingCount} pending payback` : 'All debts settled',
+      trendColor: outstandingDebt > 0 ? '#f97316' : '#10b981',
       icon: FiAlertCircle,
       iconBg: 'rgba(245, 158, 11, 0.15)',
       iconColor: '#f59e0b',
@@ -51,9 +54,9 @@ export default function MetricCards() {
     {
       id: 'active-reminders',
       title: 'Active Reminders',
-      value: `${activeRemindersCount} Alerts`,
-      trend: 'SMS, Email, and AI Call',
-      trendColor: '#94a3b8',
+      value: `${activeRemindersCount} Alert${activeRemindersCount !== 1 ? 's' : ''}`,
+      trend: activeRemindersCount > 0 ? 'SMS, Email, and AI Call' : 'No pending reminders',
+      trendColor: activeRemindersCount > 0 ? '#f59e0b' : '#64748b',
       icon: FiBell,
       iconBg: 'rgba(249, 115, 22, 0.15)',
       iconColor: '#f97316',
@@ -147,7 +150,7 @@ export default function MetricCards() {
               </button>
             </div>
 
-            {/* Bottom: Big Value + Trend/Subtitle */}
+            {/* Bottom: Big Value + Dynamic Trend */}
             <div>
               <div
                 style={{
@@ -178,4 +181,3 @@ export default function MetricCards() {
     </div>
   );
 }
-

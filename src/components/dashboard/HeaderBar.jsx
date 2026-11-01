@@ -4,9 +4,9 @@ import { usePocketPromise } from '../../context/PocketPromiseContext';
 
 export default function HeaderBar({ onOpenMobile }) {
   const { user } = useUser();
-  const { searchQuery, setSearchQuery, setIsAddModalOpen } = usePocketPromise();
+  const { searchQuery, setSearchQuery, setIsAddModalOpen, activeRemindersCount } = usePocketPromise();
 
-  const userName = user?.firstName || 'Alex';
+  const userName = user?.firstName || 'User';
 
   return (
     <header
@@ -148,27 +148,29 @@ export default function HeaderBar({ onOpenMobile }) {
             <FiBell size={18} />
           </button>
           {/* Badge */}
-          <span
-            style={{
-              position: 'absolute',
-              top: '-3px',
-              right: '-3px',
-              width: '18px',
-              height: '18px',
-              borderRadius: '50%',
-              backgroundColor: '#0072FF',
-              color: '#ffffff',
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 8px rgba(0, 114, 255, 0.6)',
-              border: '2px solid #0c101c',
-            }}
-          >
-            1
-          </span>
+          {activeRemindersCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '-3px',
+                right: '-3px',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                backgroundColor: '#0072FF',
+                color: '#ffffff',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 8px rgba(0, 114, 255, 0.6)',
+                border: '2px solid #0c101c',
+              }}
+            >
+              {activeRemindersCount}
+            </span>
+          )}
         </div>
 
         {/* Add New Loan Button */}

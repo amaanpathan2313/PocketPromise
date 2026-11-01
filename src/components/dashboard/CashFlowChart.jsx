@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -7,16 +8,10 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
-import { FiMoreVertical } from 'react-icons/fi';
+import { FiMoreVertical, FiTrendingUp } from 'react-icons/fi';
+import { usePocketPromise } from '../../context/PocketPromiseContext';
 
-const CASH_FLOW_DATA = [
-  { month: 'Jan', lent: 45, recovered: 25 },
-  { month: 'Feb', lent: 82, recovered: 35 },
-  { month: 'Mar', lent: 98, recovered: 55 },
-  { month: 'Apr', lent: 60, recovered: 70 },
-  { month: 'May', lent: 105, recovered: 85 },
-  { month: 'Jun', lent: 75, recovered: 110 },
-];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
@@ -31,21 +26,21 @@ function CustomTooltip({ active, payload, label }) {
         }}
       >
         <p style={{ color: '#94a3b8', fontSize: '0.78rem', marginBottom: '6px', fontWeight: 600 }}>
-          {label} 2024
+          {label}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#00D2FF' }} />
             <span style={{ color: '#cbd5e1', fontSize: '0.82rem' }}>Lent:</span>
             <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.82rem' }}>
-              ₹{payload[0]?.value}k
+              ₹{Number(payload[0]?.value || 0).toLocaleString('en-IN')}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
             <span style={{ color: '#cbd5e1', fontSize: '0.82rem' }}>Recovered:</span>
             <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.82rem' }}>
-              ₹{payload[1]?.value}k
+              ₹{Number(payload[1]?.value || 0).toLocaleString('en-IN')}
             </span>
           </div>
         </div>
@@ -56,6 +51,44 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function CashFlowChart() {
+  const { allLoans } = usePocketPromise();
+
+  // Generate dynamic 6-month timeline based on real data
+  const chartData = useMemo(() => {
+    const today = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      months.push({
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+        month: MONTH_NAMES[d.getMonth()],
+        lent: 0,
+        recovered: 0,
+      });
+    }
+
+    if (!allLoans || allLoans.length === 0) {
+      return months;
+    }
+
+    allLoans.forEach((loan) => {
+      const loanDate = loan.createdAt ? new Date(loan.createdAt) : loan.dueDate ? new Date(loan.dueDate) : today;
+      const mIdx = loanDate.getMonth();
+      const matchMonth = months.find((m) => m.monthIndex === mIdx);
+      if (matchMonth) {
+        matchMonth.lent += Number(loan.amount || 0);
+        if (loan.status === 'Repaid' || loan.statusType === 'repaid') {
+          matchMonth.recovered += Number(loan.amount || 0);
+        }
+      }
+    });
+
+    return months;
+  }, [allLoans]);
+
+  const hasData = allLoans && allLoans.length > 0;
+
   return (
     <div
       style={{
@@ -135,63 +168,97 @@ export default function CashFlowChart() {
         </div>
       </div>
 
-      {/* Area Chart Container */}
-      <div style={{ flex: 1, width: '100%', minHeight: '260px' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={CASH_FLOW_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="lentGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00D2FF" stopOpacity={0.45} />
-                <stop offset="95%" stopColor="#00D2FF" stopOpacity={0.0} />
-              </linearGradient>
-              <linearGradient id="recoveredGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.45} />
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-              </linearGradient>
-            </defs>
+      {/* Area Chart Container / Empty State */}
+      <div style={{ flex: 1, width: '100%', minHeight: '260px', position: 'relative' }}>
+        {!hasData ? (
+          <div
+            style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              color: '#64748b',
+              padding: '20px',
+            }}
+          >
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(0, 210, 255, 0.08)',
+                color: '#00D2FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '12px',
+              }}
+            >
+              <FiTrendingUp size={22} />
+            </div>
+            <div style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>
+              No cash flow activity yet
+            </div>
+            <div style={{ fontSize: '0.82rem', maxWidth: '320px', lineHeight: 1.5 }}>
+              Record your first lent amount using &ldquo;+ Add New Loan&rdquo; to start seeing cash flow trends.
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="lentGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00D2FF" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="#00D2FF" stopOpacity={0.0} />
+                </linearGradient>
+                <linearGradient id="recoveredGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
 
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="rgba(255, 255, 255, 0.04)"
-              vertical={false}
-            />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(255, 255, 255, 0.04)"
+                vertical={false}
+              />
 
-            <XAxis
-              dataKey="month"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 11 }}
-              domain={[0, 120]}
-              ticks={[0, 20, 40, 60, 80, 100, 120]}
-            />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 11 }}
+              />
 
-            <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} />
 
-            <Area
-              type="monotone"
-              dataKey="lent"
-              stroke="#00D2FF"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#lentGradient)"
-            />
-            <Area
-              type="monotone"
-              dataKey="recovered"
-              stroke="#10B981"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#recoveredGradient)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+              <Area
+                type="monotone"
+                dataKey="lent"
+                stroke="#00D2FF"
+                strokeWidth={2.5}
+                fillOpacity={1}
+                fill="url(#lentGradient)"
+              />
+              <Area
+                type="monotone"
+                dataKey="recovered"
+                stroke="#10B981"
+                strokeWidth={2.5}
+                fillOpacity={1}
+                fill="url(#recoveredGradient)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
 }
-

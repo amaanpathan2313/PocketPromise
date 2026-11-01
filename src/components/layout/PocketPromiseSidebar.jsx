@@ -31,8 +31,9 @@ export default function PocketPromiseSidebar({ mobileOpen, onCloseMobile }) {
     if (onCloseMobile) onCloseMobile();
   };
 
-  const displayName = user?.firstName || 'Alex';
-  const avatarUrl = user?.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80';
+  const displayName = user?.fullName || user?.firstName || 'User';
+  const displayEmail = user?.primaryEmailAddress?.emailAddress || 'Personal Workspace';
+  const avatarUrl = user?.imageUrl || null;
 
   return (
     <>
@@ -213,18 +214,39 @@ export default function PocketPromiseSidebar({ mobileOpen, onCloseMobile }) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid rgba(0, 210, 255, 0.3)',
-                flexShrink: 0,
-              }}
-            />
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid rgba(0, 210, 255, 0.3)',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #00D2FF 0%, #0072FF 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  border: '2px solid rgba(0, 210, 255, 0.3)',
+                  flexShrink: 0,
+                }}
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <span
                 style={{
@@ -247,7 +269,7 @@ export default function PocketPromiseSidebar({ mobileOpen, onCloseMobile }) {
                   textOverflow: 'ellipsis',
                 }}
               >
-                User Profile
+                {displayEmail}
               </span>
             </div>
           </div>
